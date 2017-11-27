@@ -5,7 +5,7 @@
 #include "./deps/libuv/include/uv.h"
 
 #include "./include/log.h"
-#include "./include/server.h"
+#include "./include/tcp.h"
 
 // static void on_connect
 
@@ -15,10 +15,15 @@ int main() {
   const char* address = "0.0.0.0";
   const int port = 8999;
 
-  Server server([](Connection* conn) {
+  Server server([](Server::Connection* conn) {
     conn->Accept();
 
-    conn->ReadStart([&conn](Slice* data) {
+    conn->ReadStart([&conn](Slice* s) {
+
+      log("server recieved:");
+      log(s->data);
+      // delete Slice
+
       conn->Write("World", []() {
         // log("second write");
       });
@@ -33,17 +38,24 @@ int main() {
     server.Listen(address, port);
   });
 
-  // std::thread client_thread([&]() {
-  //   uv_tcp_t* socket = (uv_tcp_t*)malloc(sizeof(uv_tcp_t));
-  //   uv_tcp_init(loop, socket);
+  std::thread client_thread([&]() {
+    auto client = new Client(address, port);
 
-  //   uv_connect_t* connect = (uv_connect_t*)malloc(sizeof(uv_connect_t));
+    client->Connect([&](Client::Connection* conn) {
 
-  //   struct sockaddr_in dest;
-  //   uv_ip4_addr("127.0.0.1", 80, &dest);
+      conn->ReadStart([](Slice* s) {
+        log("client recieved:");
+        log(s->data);
 
-  //   uv_tcp_connect(connect, socket, (const struct sockaddr*)&dest, on_connect);
-  // });
+        // delete Slice
+      });
+
+      conn->Write("stuff", []() {
+
+      });
+      // delete client;
+    });
+  });
 
   server_thread.join();
 

@@ -7,4 +7,8 @@ struct Slice {
 
   Slice(const char* d, const std::size_t s):
     data(d), size(s) {}
+
+  ~Slice() {
+    delete this->data;
+  }
 };
